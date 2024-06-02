@@ -58,6 +58,7 @@ def parse_config():
     cfg['n_neighbors'] = args.num_covis
     cfg['n_neighbors_loc'] = args.num_loc
     # Output path for LIMAP results (tmp)
+    scene_id = os.path.basename(cfg['vsfm_path'])
     if cfg['output_dir'] is None:
         cfg['output_dir'] = 'tmp/cambridge/{}'.format(scene_id)
     # Output folder for LIMAP linetracks (in tmp)

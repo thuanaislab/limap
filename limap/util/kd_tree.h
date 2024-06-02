@@ -4,7 +4,7 @@
 #include <iostream>
 #include <memory>
 #include <string.h>
-
+#include <cstdint>
 #include <Eigen/Core>
 #include "util/nanoflann.hpp"
 

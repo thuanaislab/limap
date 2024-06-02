@@ -55,6 +55,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <vector>
+#include <cstdint>
 
 /** Library version: 0xMmP (M=Major,m=minor,P=patch) */
 #define NANOFLANN_VERSION 0x142
