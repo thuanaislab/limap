@@ -24,6 +24,7 @@ def ReadModelVisualSfM(vsfm_path, nvm_file="reconstruction.nvm"):
         counter += 1
 
         imname = os.path.join(vsfm_path, line[0])
+        imname = imname.replace("jpg", "png")
         f = float(line[1])
         qvec = np.array([float(line[k]) for k in np.arange(2, 6).tolist()])
         center_vec = np.array([float(line[k]) for k in np.arange(6, 9).tolist()])
