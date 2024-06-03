@@ -36,6 +36,7 @@ def parse_config():
     arg_parser.add_argument('--default_config_file', type=str, default='cfgs/localization/default.yaml', help='default config file')
     arg_parser.add_argument('--dataset', type=Path, required=True, help='ScanNet root path')
     arg_parser.add_argument('-s', '--scene', type=str, required=True, help='scene name(s)')
+    arg_parser.add_argument('--output_dir', type=str, default="tmp/ScanNet/", help='output directory')
     arg_parser.add_argument('--info_path', type=str, default=None, help='load precomputed info')
 
     arg_parser.add_argument('--query_images', default=None, type=Path, help='Path to the file listing query images')
@@ -62,7 +63,7 @@ def parse_config():
 
     # Output path for LIMAP results (tmp)
     if cfg['output_dir'] is None:
-        cfg['output_dir'] = 'tmp/ScanNet/{}'.format(args.scene)
+        cfg['output_dir'] = args.output_dir + '/' + args.scene
     # Output folder for LIMAP linetracks (in tmp)
     if cfg['output_folder'] is None:
         cfg['output_folder'] = 'finaltracks'
@@ -74,18 +75,15 @@ def main():
     cfg = _runners.setup(cfg)
 
     # outputs is for localization-related results
-    outputs = Path(cfg['output_dir']) / 'localization'
+    outputs = Path(cfg['output_dir'])
     outputs.mkdir(exist_ok=True, parents=True)
 
     logger.info(f'Working on scene "{args.scene}".')
     
-    # create reference SfM model
     gt_dir = args.dataset / f'{args.scene}'
-    ref_sfm_path = 'ref_sfm_gt_pose'
-    create_reference_sfm_from_ScanNetDatset(gt_dir, gt_dir / ref_sfm_path)
-    imagecols, neighbors, ranges = read_scene_ScanNet(cfg, str(gt_dir), ref_sfm_path, 'color', n_neighbors=args.num_covis)
-    import pdb; pdb.set_trace()
-    test_list = args.query_images or gt_dir / 'list_test.txt'
+
+    # test_list = args.query_images or gt_dir / 'list_test.txt'
+    test_list = None
     if args.eval is not None:
         evaluate(gt_dir, args.eval, test_list)
         return
@@ -104,14 +102,19 @@ def main():
     train_ids, query_ids = ids['train'], ids['query']
 
     # Some paths useful for LIMAP localization too
-    ref_sfm_path = outputs / ('sfm_superpoint+superglue' + ('+depth' if args.use_dense_depth else ''))
-    depth_dir = args.dataset / f'depth/ScanNet_{args.scene}/train/depth'
+    ref_sfm_path = ('sfm_superpoint+superglue' + ('+depth' if args.use_dense_depth else ''))
+    depth_dir = gt_dir / 'depth'
     retrieval_path = args.dataset / 'ScanNet_densevlad_retrieval_top_10' / f'{args.scene}_top10.txt'
 
     ##########################################################
     # [B] LIMAP triangulation/fitnmerge for database line tracks
     ##########################################################
-    all_images = colmap_utils.read_images_binary(gt_dir / 'images.bin')
+    
+    # create reference SfM model
+    imagecols, neighbors, ranges = read_scene_ScanNet(cfg, str(gt_dir), ref_sfm_path, 'color', n_neighbors=args.num_covis)
+    all_images_path_bin = gt_dir / (ref_sfm_path + '/images.bin')
+    all_images = colmap_utils.read_images_binary(all_images_path_bin)
+    
     imagecols_train = imagecols.subset_by_image_ids(train_ids)
     if not args.use_dense_depth:
         finaltracks_dir = os.path.join(cfg['output_dir'], cfg['output_folder'])
@@ -134,6 +137,7 @@ def main():
     ##########################################################
     # [C] Localization with points and lines
     ##########################################################
+    '''
     retrieval = parse_retrieval(retrieval_path)
     img_id_to_name = {img_id: all_images[img_id].name for img_id in all_images}
     imagecols_query = imagecols.subset_by_image_ids(query_ids)
@@ -160,6 +164,6 @@ def main():
         cfg, imagecols_train, imagecols_query, point_correspondences, linetracks_db, retrieval, results_joint, img_name_dict=img_id_to_name)
 
     evaluate(gt_dir, results_joint, test_list, only_localized=True)
-
+    '''
 if __name__ == '__main__':
     main()

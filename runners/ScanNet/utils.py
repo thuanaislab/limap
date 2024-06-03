@@ -11,7 +11,8 @@ import limap.base as _base
 import limap.pointsfm as _psfm
 import limap.util.io as limapio
 
-from hloc import extract_features, localize_sfm, match_features, pairs_from_covisibility, triangulation
+from hloc import (extract_features, localize_sfm, match_features, pairs_from_covisibility, triangulation,
+                  pairs_from_poses)
 from hloc.utils.read_write_model import read_model, write_model, Camera, Image, Point3D, rotmat2qvec
 from hloc.pipelines.Cambridge.utils import create_query_list_with_intrinsics, evaluate
 from hloc.utils.parsers import *
@@ -96,27 +97,36 @@ def create_reference_sfm_from_ScanNetDatset(data_path, ref_model, ext=".bin"):
 
 def scene_coordinates(p2D, R_w2c, t_w2c, depth, camera):
     assert len(depth) == len(p2D)
-    p2D_norm = np.stack(pycolmap.Camera(camera._asdict()).image_to_world(p2D))
-    p2D_h = np.concatenate([p2D_norm, np.ones_like(p2D_norm[:, :1])], 1)
-    p3D_c = p2D_h * depth[:, None]
+    K = np.array([[camera.params[0], 0, camera.params[2]],
+                  [0, camera.params[1], camera.params[3]],
+                  [0, 0, 1]])
+    p2D_homogeneous = np.concatenate([p2D, np.ones((p2D.shape[0], 1))], axis=1)
+    p2D_normalized = np.linalg.inv(K) @ p2D_homogeneous.T
+    p3D_c = np.multiply(p2D_normalized.T, depth[:, None])
     p3D_w = (p3D_c - t_w2c) @ R_w2c
     return p3D_w
 
 
-def interpolate_depth(depth, kp):
+def interpolate_depth(depth, kp, image_size):
+    
+    # Resize depth image to match the size of the actual image
+    depth_tensor = torch.from_numpy(depth).unsqueeze(0).unsqueeze(0)
+    depth_tensor = torch.nn.functional.interpolate(depth_tensor, size=image_size, mode='bilinear', align_corners=False)
+    depth = depth_tensor.squeeze().numpy()
+    
     h, w = depth.shape
-    kp = kp / np.array([[w-1, h-1]]) * 2 - 1
+    kp = kp / np.array([[w - 1, h - 1]]) * 2 - 1
     assert np.all(kp > -1) and np.all(kp < 1)
-    depth = torch.from_numpy(depth)[None, None]
-    kp = torch.from_numpy(kp)[None, None]
+    
+    kp = torch.from_numpy(kp).unsqueeze(0).unsqueeze(0)
     grid_sample = torch.nn.functional.grid_sample
 
     # To maximize the number of points that have depth:
     # do bilinear interpolation first and then nearest for the remaining points
-    interp_lin = grid_sample(
-        depth, kp, align_corners=True, mode='bilinear')[0, :, 0]
+    interp_lin = grid_sample(depth_tensor, kp, align_corners=True, mode="bilinear")[0, :, 0]
     interp_nn = torch.nn.functional.grid_sample(
-        depth, kp, align_corners=True, mode='nearest')[0, :, 0]
+        depth_tensor, kp, align_corners=True, mode="nearest"
+    )[0, :, 0]
     interp = torch.where(torch.isnan(interp_lin), interp_nn, interp_lin)
     valid = ~torch.any(torch.isnan(interp), 0)
 
@@ -126,22 +136,25 @@ def interpolate_depth(depth, kp):
 
 
 def image_path_to_rendered_depth_path(image_name):
-    parts = image_name.split('/')
-    name = '_'.join([''.join(parts[0].split('-')), parts[1]])
-    name = name.replace('color', 'pose')
-    name = name.replace('png', 'depth.tiff')
+    name = image_name.replace("jpg", "png")
     return name
 
 
 def project_to_image(p3D, R, t, camera, eps: float = 1e-4, pad: int = 1):
     p3D = (p3D @ R.T) + t
     visible = p3D[:, -1] >= eps  # keep points in front of the camera
-    p2D_norm = p3D[:, :-1] / p3D[:, -1:].clip(min=eps)
-    p2D = np.stack(pycolmap.Camera(camera._asdict()).world_to_image(p2D_norm))
+
+    K = np.array([[camera.params[0], 0, camera.params[2]],
+                  [0, camera.params[1], camera.params[3]],
+                  [0, 0, 1]])
+    p2D_homogeneous = p3D[:, :-1] / p3D[:, -1:].clip(min=eps)
+    p2D_homogeneous = np.concatenate([p2D_homogeneous, np.ones((p2D_homogeneous.shape[0], 1))], axis=1)
+    p2D = p2D_homogeneous @ K.T
+
     size = np.array([camera.width - pad - 1, camera.height - pad - 1])
-    valid = np.all((p2D >= pad) & (p2D <= size), -1)
+    valid = np.all((p2D[:, :2] >= pad) & (p2D[:, :2] <= size), -1)
     valid &= visible
-    return p2D[valid], valid
+    return p2D[valid, :2], valid
 
 
 def correct_sfm_with_gt_depth(sfm_path, depth_folder_path, output_path):
@@ -163,7 +176,7 @@ def correct_sfm_with_gt_depth(sfm_path, depth_folder_path, output_path):
 
         p2Ds, valids_projected = project_to_image(p3Ds, R_w2c, t_w2c, camera)
         invalid_p3D_ids = p3D_ids[p3D_ids != -1][~valids_projected]
-        interp_depth, valids_backprojected = interpolate_depth(depth, p2Ds)
+        interp_depth, valids_backprojected = interpolate_depth(depth, p2Ds, (camera.height, camera.width))
         scs = scene_coordinates(p2Ds[valids_backprojected], R_w2c, t_w2c,
                                 interp_depth[valids_backprojected],
                                 camera)
@@ -230,7 +243,6 @@ def read_scene_ScanNet(cfg, root_path, model_path, image_path, n_neighbors=20):
             data = np.load(f, allow_pickle=True)
             imagecols_np, neighbors, ranges = data['imagecols_np'].item(), data['neighbors'].item(), data['ranges']
             imagecols = _base.ImageCollection(imagecols_np)
-    import pdb; pdb.set_trace()
     return imagecols, neighbors, ranges
     
 def get_result_filenames(cfg, use_dense_depth=False):
@@ -275,18 +287,18 @@ def get_train_test_ids_from_sfm(full_model, blacklist=None, ext='.bin'):
 
 def run_hloc_ScanNet(cfg, dataset, scene, results_file, test_list, num_covis=30, use_dense_depth=False, logger=None):
     results_dir = results_file.parent
-    gt_dir = dataset / f'ScanNet_sfm_triangulated/{scene}/triangulated'
+    gt_dir = dataset / f'{scene}'
 
-    ref_sfm_sift = results_dir / 'sfm_sift'
-    ref_sfm = results_dir / 'sfm_superpoint+superglue'
+    ref_sfm_gt_pose = gt_dir / 'sfm_gt_pose'
+    ref_sfm = gt_dir / 'sfm_superpoint+superglue'
     query_list = results_dir / 'query_list_with_intrinsics.txt'
     sfm_pairs = results_dir / f'pairs-db-covis{num_covis}.txt'
-    depth_dir = dataset / f'depth/ScanNet_{scene}/train/depth'
+    depth_dir = gt_dir / 'depth'
     retrieval_path = dataset / 'ScanNet_densevlad_retrieval_top_10' / f'{scene}_top10.txt'
     feature_conf = {
         'output': 'feats-superpoint-n4096-r1024',
-        'model': {'name': 'superpoint', 'nms_radius': 3, 'max_keypoints': 4096},
-        'preprocessing': {'globs': ['*.color.png'], 'grayscale': True, 'resize_max': 1024}
+        'model': {'name': 'superpoint', 'nms_radius': 3, 'max_keypoints': 2048, "keypoint_threshold": 0.0},
+        'preprocessing': {'globs': ['*.jpg'], 'grayscale': True, 'resize_max': 1024}
     }
     if cfg['localization']['2d_matcher'] == 'gluestick':
         raise ValueError("GlueStick not yet supported in HLoc.")
@@ -294,34 +306,38 @@ def run_hloc_ScanNet(cfg, dataset, scene, results_file, test_list, num_covis=30,
     else:
         matcher_conf = match_features.confs['superglue']
         matcher_conf['model']['sinkhorn_iterations'] = 5
-
+    
+    # create_reference_sfm(gt_dir, ref_sfm_gt_pose, test_list)
+    create_reference_sfm_from_ScanNetDatset(gt_dir, ref_sfm_gt_pose)
+    train_ids, query_ids = get_train_test_ids_from_sfm(ref_sfm_gt_pose, test_list)
+    # create_query_list_with_intrinsics(gt_dir, query_list, test_list)
+    
     # feature extraction
     features = extract_features.main(
-            feature_conf, dataset / scene, results_dir, as_half=True)
-
-    train_ids, query_ids = get_train_test_ids_from_sfm(gt_dir, test_list)
-    create_reference_sfm(gt_dir, ref_sfm_sift, test_list)
-    create_query_list_with_intrinsics(gt_dir, query_list, test_list)
+            feature_conf, dataset / f'{scene}/color', results_dir, as_half=True)
+    
     if not sfm_pairs.exists():
-        pairs_from_covisibility.main(
-                ref_sfm_sift, sfm_pairs, num_matched=num_covis)
+        # pairs_from_covisibility.main(
+        #         ref_sfm_gt_pose, sfm_pairs, num_matched=num_covis)
+        pairs_from_poses.main(ref_sfm_gt_pose, sfm_pairs, num_matched=num_covis)
     sfm_matches = match_features.main(
             matcher_conf, sfm_pairs, feature_conf['output'], results_dir)
-    loc_matches = match_features.main(
-            matcher_conf, retrieval_path, feature_conf['output'], results_dir)
+    # loc_matches = match_features.main(
+    #         matcher_conf, retrieval_path, feature_conf['output'], results_dir)
     if not ref_sfm.exists():
         triangulation.main(
-                ref_sfm, ref_sfm_sift, dataset / scene, sfm_pairs, features, sfm_matches)
+                ref_sfm, ref_sfm_gt_pose, dataset / scene, sfm_pairs, features, sfm_matches)
 
     if use_dense_depth:
         assert depth_dir is not None
-        ref_sfm_fix = results_dir / 'sfm_superpoint+superglue+depth'
+        ref_sfm_fix = gt_dir / 'sfm_superpoint+superglue+depth'
         if not cfg['skip_exists'] or not ref_sfm_fix.exists():
             correct_sfm_with_gt_depth(ref_sfm, depth_dir, ref_sfm_fix)
         ref_sfm = ref_sfm_fix
 
     ref_sfm = pycolmap.Reconstruction(ref_sfm)
 
+    '''
     if not (cfg['skip_exists'] or cfg['localization']['hloc']['skip_exists']) or not os.path.exists(results_file):
         # point only localization
         if logger: logger.info('Running Point-only localization...')
@@ -331,9 +347,10 @@ def run_hloc_ScanNet(cfg, dataset, scene, results_file, test_list, num_covis=30,
         evaluate(gt_dir, results_file, test_list)
     else:
         if logger: logger.info(f'Point-only localization skipped.')
-
+    '''
     # Read coarse poses
     poses = {}
+    '''
     with open(results_file, 'r') as f:
         lines = []
         for data in f.read().rstrip().split('\n'):
@@ -342,6 +359,7 @@ def run_hloc_ScanNet(cfg, dataset, scene, results_file, test_list, num_covis=30,
             q, t = np.split(np.array(data[1:], float), [4])
             poses[name] = _base.CameraPose(q, t)
     if logger: logger.info(f'Coarse pose read from {results_file}')
+    '''
     hloc_log_file = f'{results_file}_logs.pkl'
 
     return poses, hloc_log_file, {'train': train_ids, 'query': query_ids}
