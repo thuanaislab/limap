@@ -78,8 +78,7 @@ def main():
     outputs.mkdir(exist_ok=True, parents=True)
 
     logger.info(f'Working on scene "{args.scene}".')
-    gt_dir = f'7scenes_sfmGT_triangulated/{args.scene}/'
-    imagecols, neighbors, ranges = read_scene_7scenes(cfg, str(args.dataset), gt_dir, args.scene, n_neighbors=args.num_covis)
+    
 
     gt_dir = args.dataset / gt_dir
     test_list = args.query_images or gt_dir / 'list_test.txt'
@@ -105,6 +104,7 @@ def main():
     depth_dir = args.dataset / f'depth/7scenes_{args.scene}/train/depth'
     retrieval_path = args.dataset / '7scenes_densevlad_retrieval_top_10' / f'{args.scene}_top10.txt'
 
+    imagecols, neighbors, ranges = read_scene_7scenes(cfg, str(args.dataset), f'7scenes_sfmGT_triangulated/{args.scene}/', args.scene, n_neighbors=args.num_covis)
     ##########################################################
     # [B] LIMAP triangulation/fitnmerge for database line tracks
     ##########################################################

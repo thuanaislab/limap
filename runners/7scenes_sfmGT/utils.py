@@ -233,7 +233,7 @@ def get_train_test_ids_from_sfm(full_model, blacklist=None, ext='.bin'):
 
 def run_hloc_7scenes(cfg, dataset, scene, results_file, test_list, num_covis=30, use_dense_depth=False, logger=None):
     results_dir = results_file.parent
-    gt_dir = dataset / f'7scenes_sfm_triangulated/{scene}/triangulated'
+    gt_dir = dataset / f'7scenes_sfmGT_triangulated/{scene}/'
 
     ref_sfm_sift = results_dir / 'sfm_sift'
     ref_sfm = results_dir / 'sfm_superpoint+superglue'
