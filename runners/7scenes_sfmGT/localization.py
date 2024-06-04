@@ -78,7 +78,7 @@ def main():
     outputs.mkdir(exist_ok=True, parents=True)
 
     logger.info(f'Working on scene "{args.scene}".')
-    
+    gt_dir = f'7scenes_sfmGT_triangulated/{args.scene}/'
 
     gt_dir = args.dataset / gt_dir
     test_list = args.query_images or gt_dir / 'list_test.txt'
