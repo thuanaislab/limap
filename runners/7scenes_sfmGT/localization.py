@@ -165,7 +165,7 @@ def main(dataset, scene, use_dense_depth=False):
 
 if __name__ == '__main__':
     SCENES = ['chess', 'fire', 'heads', 'office', 'pumpkin', 'redkitchen', 'stairs']
-    use_dense_depth = True
+    use_dense_depth = False
     for scene in SCENES:
         dataset = "/home/pc1/Desktop/datasets/imgs_datasets/7scenes"
         main(dataset, scene, use_dense_depth)
