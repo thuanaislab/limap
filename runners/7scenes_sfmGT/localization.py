@@ -61,8 +61,8 @@ def parse_config():
         cfg['refinement']['disable'] = True
 
     # Output path for LIMAP results (tmp)
-    if cfg['output_dir'] is None:
-        cfg['output_dir'] = 'tmp/7scenes/{}'.format(args.scene)
+    # if cfg['output_dir'] is None:
+    #     cfg['output_dir'] = 'tmp/7scenes/{}'.format(args.scene)
     # Output folder for LIMAP linetracks (in tmp)
     if cfg['output_folder'] is None:
         cfg['output_folder'] = 'finaltracks'
@@ -75,6 +75,9 @@ def main(dataset, scene, use_dense_depth=False):
     args.scene = scene
     args.dataset = Path(dataset)
     args.use_dense_depth = use_dense_depth
+    
+    if cfg['output_dir'] is None:
+        cfg['output_dir'] = 'tmp/7scenes/{}'.format(args.scene)
     
     cfg = _runners.setup(cfg)
 
@@ -165,7 +168,7 @@ def main(dataset, scene, use_dense_depth=False):
 
 if __name__ == '__main__':
     SCENES = ['chess', 'fire', 'heads', 'office', 'pumpkin', 'redkitchen', 'stairs']
-    use_dense_depth = False
+    use_dense_depth = True
     for scene in SCENES:
         dataset = "/home/pc1/Desktop/datasets/imgs_datasets/7scenes"
         main(dataset, scene, use_dense_depth)
