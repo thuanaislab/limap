@@ -167,7 +167,5 @@ if __name__ == '__main__':
     SCENES = ['chess', 'fire', 'heads', 'office', 'pumpkin', 'redkitchen', 'stairs']
     use_dense_depth = True
     for scene in SCENES:
-        scene = "pumpkin"
         dataset = "/home/pc1/Desktop/datasets/imgs_datasets/7scenes"
         main(dataset, scene, use_dense_depth)
-        break
