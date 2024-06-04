@@ -73,7 +73,7 @@ def main(dataset, scene, use_dense_depth=False):
     
     cfg, args = parse_config()
     args.scene = scene
-    args.dataset = dataset
+    args.dataset = Path(dataset)
     args.use_dense_depth = use_dense_depth
     
     cfg = _runners.setup(cfg)
