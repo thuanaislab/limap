@@ -34,8 +34,8 @@ def parse_config():
     arg_parser = argparse.ArgumentParser(description='run localization with point and lines')
     arg_parser.add_argument('-c', '--config_file', type=str, default='cfgs/localization/7scenes.yaml', help='config file')
     arg_parser.add_argument('--default_config_file', type=str, default='cfgs/localization/default.yaml', help='default config file')
-    arg_parser.add_argument('--dataset', type=Path, required=True, help='7scenes root path')
-    arg_parser.add_argument('-s', '--scene', type=str, required=True, help='scene name(s)')
+    arg_parser.add_argument('--dataset', type=Path, required=False, help='7scenes root path')
+    arg_parser.add_argument('-s', '--scene', type=str, required=False, help='scene name(s)')
     arg_parser.add_argument('--info_path', type=str, default=None, help='load precomputed info')
 
     arg_parser.add_argument('--query_images', default=None, type=Path, help='Path to the file listing query images')
