@@ -69,8 +69,13 @@ def parse_config():
     cfg['output_folder'] += '_{}'.format('dense' if args.use_dense_depth else 'sparse')
     return cfg, args
 
-def main():
+def main(dataset, scene, use_dense_depth=False):
+    
     cfg, args = parse_config()
+    args.scene = scene
+    args.dataset = dataset
+    args.use_dense_depth = use_dense_depth
+    
     cfg = _runners.setup(cfg)
 
     # outputs is for localization-related results
@@ -98,7 +103,7 @@ def main():
         cfg, args.dataset, args.scene, results_point, test_list, args.num_covis, args.use_dense_depth, logger
     )
     train_ids, query_ids = ids['train'], ids['query']
-
+    return # Skip the rest for now
     # Some paths useful for LIMAP localization too
     ref_sfm_path = outputs / ('sfm_superpoint+superglue' + ('+depth' if args.use_dense_depth else ''))
     depth_dir = args.dataset / f'depth/7scenes_{args.scene}/train/depth'
@@ -159,4 +164,10 @@ def main():
     evaluate(gt_dir, results_joint, test_list, only_localized=True)
 
 if __name__ == '__main__':
-    main()
+    SCENES = ['chess', 'fire', 'heads', 'office', 'pumpkin', 'redkitchen', 'stairs']
+    use_dense_depth = True
+    for scene in SCENES:
+        scene = "pumpkin"
+        dataset = "/home/pc1/Desktop/datasets/imgs_datasets/7scenes"
+        main(dataset, scene, use_dense_depth)
+        break
