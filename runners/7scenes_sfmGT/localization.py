@@ -166,7 +166,8 @@ def main(dataset, scene, use_dense_depth=False):
     evaluate(gt_dir, results_joint, test_list, only_localized=True)
 
 if __name__ == '__main__':
-    SCENES = ['chess', 'fire', 'heads', 'office', 'pumpkin', 'redkitchen', 'stairs']
+    # SCENES = ['chess', 'fire', 'heads', 'office', 'pumpkin', 'redkitchen', 'stairs']
+    SCENES = ['chess']
     use_dense_depth = False
     for scene in SCENES:
         dataset = "/home/pc1/Desktop/datasets/imgs_datasets/7scenes"
