@@ -27,13 +27,13 @@ merging:
 line2d:
     detector: 
         skip_exists: True
-        method: "lsd"
+        method: "deeplsd"
     extractor:
         skip_exists: True
-        method: "sold2"  
+        method: "wireframe"  
     matcher:
         skip_exists: True
-        method: "sold2"  
+        method: "gluestick"  
 
 sfm:
     hloc:
