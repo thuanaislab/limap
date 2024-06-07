@@ -78,6 +78,7 @@ def create_reference_sfm_from_ScanNetDatset(data_path, ref_model, ext=".bin"):
                     id=0, model="PINHOLE", width=1296, height=968, params=np.array((intrinsic[0,0], 
                                                                                    intrinsic[1,1], intrinsic[0,2], intrinsic[1,2]))
                 )
+    imgs_nopose = 0
     for file in file_list:
         image_id = int(file.split(".")[0])
         tmp_path = pose_path / f"{image_id}.txt"
@@ -86,6 +87,7 @@ def create_reference_sfm_from_ScanNetDatset(data_path, ref_model, ext=".bin"):
             pose = [list(map(float, x.split())) for x in pose]
             pose = np.array(pose)
         if np.isinf(pose).any():
+            imgs_nopose += 1
             continue
         pose = np.linalg.inv(pose)
         t = pose[:3, 3]
@@ -94,6 +96,7 @@ def create_reference_sfm_from_ScanNetDatset(data_path, ref_model, ext=".bin"):
         images[image_id] = Image(
             id=image_id, qvec=q, tvec=t, camera_id=0, name=file, xys=[], point3D_ids=[]
         )
+    print("[Warning] {} images have no pose.".format(imgs_nopose))
     write_model(cameras, images, points3D, ref_model, ".bin")
 
 
