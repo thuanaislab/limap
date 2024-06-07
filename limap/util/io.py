@@ -22,8 +22,7 @@ def delete_folder(folder):
 
 def check_makedirs(folder):
     if not os.path.exists(folder):
-        os.umask(0)
-        os.makedirs(folder, mode=0o777)
+        os.makedirs(folder)
 
 def save_npy(fname, nparray):
     check_directory(fname)
