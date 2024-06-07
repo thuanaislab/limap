@@ -182,10 +182,10 @@ if __name__ == '__main__':
     
     no_converged_scene = []
     for i in range(start_scene, stop_scene):
-        try:
-            scene = f'scene{i:04d}_00'
-            main(dataset_dir, scene, output_dir, use_dense_depth)
-        except:
-            no_converged_scene.append(scene)
-            continue
+        # try:
+        scene = f'scene{i:04d}_00'
+        main(dataset_dir, scene, output_dir, use_dense_depth)
+        # except:
+        #     no_converged_scene.append(scene)
+        #     continue
     print("Done! Scenes that are not converged: ", no_converged_scene)
