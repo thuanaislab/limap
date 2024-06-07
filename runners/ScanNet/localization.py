@@ -30,7 +30,7 @@ logger.setLevel(logging.INFO)
 logger.addHandler(handler)
 logger.propagate = False
 
-def parse_config():
+def parse_config(dataset_dir, scene, output_dir, use_dense_depth):
     arg_parser = argparse.ArgumentParser(description='run localization with point and lines')
     arg_parser.add_argument('-c', '--config_file', type=str, default='cfgs/localization/ScanNet.yaml', help='config file')
     arg_parser.add_argument('--default_config_file', type=str, default='cfgs/localization/default.yaml', help='default config file')
@@ -50,6 +50,12 @@ def parse_config():
 
     args, unknown = arg_parser.parse_known_args()
     cfg = cfgutils.load_config(args.config_file, default_path=args.default_config_file)
+    
+    args.dataset = dataset_dir
+    args.scene = scene
+    args.output_dir = output_dir
+    args.use_dense_depth = use_dense_depth
+    
     shortcuts = dict()
     shortcuts['-nv'] = '--n_visible_views'
     shortcuts['-nn'] = '--n_neighbors'
@@ -70,8 +76,8 @@ def parse_config():
     cfg['output_folder'] += '_{}'.format('dense' if args.use_dense_depth else 'sparse')
     return cfg, args
 
-def main():
-    cfg, args = parse_config()
+def main(dataset_dir, scene, output_dir, use_dense_depth):
+    cfg, args = parse_config(dataset_dir, scene, output_dir, use_dense_depth)
     cfg = _runners.setup(cfg)
 
     # outputs is for localization-related results
@@ -166,4 +172,12 @@ def main():
     evaluate(gt_dir, results_joint, test_list, only_localized=True)
     '''
 if __name__ == '__main__':
-    main()
+    dataset_dir = Path('/media/hoang/Data/ScanNet/ScanNet_data')
+    output_dir = Path('/media/hoang/Data/ScanNet/ScanNet_LimapOutput')
+    start_scene = 0
+    stop_scene = 100
+    use_dense_depth = True
+    # Start reconstruction for each scene. 
+    for i in range(start_scene, stop_scene):
+        scene = f'scene{i:04d}_00'
+        main(dataset_dir, scene, output_dir, use_dense_depth)
