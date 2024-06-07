@@ -85,6 +85,7 @@ def create_reference_sfm_from_ScanNetDatset(data_path, ref_model, ext=".bin"):
             pose = f.read().rstrip().split("\n")
             pose = [list(map(float, x.split())) for x in pose]
             pose = np.array(pose)
+        import pdb; pdb.set_trace()
         pose = np.linalg.inv(pose)
         t = pose[:3, 3]
         R = pose[:3, :3]
