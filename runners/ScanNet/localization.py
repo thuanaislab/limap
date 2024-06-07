@@ -178,14 +178,14 @@ if __name__ == '__main__':
     stop_scene = 100
     use_dense_depth = True
     # Start reconstruction for each scene. 
-    main(dataset_dir, "scene0001_00", output_dir, use_dense_depth)
+    # main(dataset_dir, "scene0001_00", output_dir, use_dense_depth)
     
-    # no_converged_scene = []
-    # for i in range(start_scene, stop_scene):
-    #     try:
-    #         scene = f'scene{i:04d}_00'
-    #         main(dataset_dir, scene, output_dir, use_dense_depth)
-    #     except:
-    #         no_converged_scene.append(scene)
-    #         continue
-    # print("Done! Scenes that are not converged: ", no_converged_scene)
+    no_converged_scene = []
+    for i in range(start_scene, stop_scene):
+        try:
+            scene = f'scene{i:04d}_00'
+            main(dataset_dir, scene, output_dir, use_dense_depth)
+        except:
+            no_converged_scene.append(scene)
+            continue
+    print("Done! Scenes that are not converged: ", no_converged_scene)
