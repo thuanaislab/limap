@@ -41,7 +41,7 @@ def parse_config():
     arg_parser.add_argument('--query_images', default=None, type=Path, help='Path to the file listing query images')
     arg_parser.add_argument('--eval', default=None, type=Path, help='Path to the result file')
 
-    arg_parser.add_argument('--num_covis', type=int, default=20,
+    arg_parser.add_argument('--num_covis', type=int, default=10,
                         help='Number of image pairs for SfM, default: %(default)s')
     arg_parser.add_argument('--num_loc', type=int, default=10,
                         help='Number of image pairs for loc, default: %(default)s')
