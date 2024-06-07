@@ -173,7 +173,7 @@ def main(dataset_dir, scene, output_dir, use_dense_depth):
     '''
 if __name__ == '__main__':
     dataset_dir = Path('/media/hoang/Data/ScanNet/ScanNet_data')
-    output_dir = Path('/media/hoang/Data/ScanNet/ScanNet_LimapOutput')
+    output_dir = '/media/hoang/Data/ScanNet/ScanNet_LimapOutput'
     start_scene = 0
     stop_scene = 100
     use_dense_depth = True
