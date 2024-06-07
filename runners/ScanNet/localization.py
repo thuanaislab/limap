@@ -34,8 +34,8 @@ def parse_config(dataset_dir, scene, output_dir, use_dense_depth):
     arg_parser = argparse.ArgumentParser(description='run localization with point and lines')
     arg_parser.add_argument('-c', '--config_file', type=str, default='cfgs/localization/ScanNet.yaml', help='config file')
     arg_parser.add_argument('--default_config_file', type=str, default='cfgs/localization/default.yaml', help='default config file')
-    arg_parser.add_argument('--dataset', type=Path, required=True, help='ScanNet root path')
-    arg_parser.add_argument('-s', '--scene', type=str, required=True, help='scene name(s)')
+    arg_parser.add_argument('--dataset', type=Path, required=False, help='ScanNet root path')
+    arg_parser.add_argument('-s', '--scene', type=str, required=False, help='scene name(s)')
     arg_parser.add_argument('--output_dir', type=str, default="tmp/ScanNet/", help='output directory')
     arg_parser.add_argument('--info_path', type=str, default=None, help='load precomputed info')
 
