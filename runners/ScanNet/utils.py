@@ -180,7 +180,9 @@ def correct_sfm_with_gt_depth(sfm_path, depth_folder_path, output_path):
         try:
             p3Ds = np.stack([points3D[i].xyz for i in p3D_ids[p3D_ids != -1]], 0)
         except:
-            import pdb; pdb.set_trace()
+            print("[Warning] No 3D points in the image.")
+            continue
+            # import pdb; pdb.set_trace()
 
         p2Ds, valids_projected = project_to_image(p3Ds, R_w2c, t_w2c, camera)
         invalid_p3D_ids = p3D_ids[p3D_ids != -1][~valids_projected]
