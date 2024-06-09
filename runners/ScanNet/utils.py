@@ -180,7 +180,7 @@ def correct_sfm_with_gt_depth(sfm_path, depth_folder_path, output_path):
         try:
             p3Ds = np.stack([points3D[i].xyz for i in p3D_ids[p3D_ids != -1]], 0)
         except:
-            print("[Warning] No 3D points in the image.")
+            print(f"[Warning] Image {image_name} has no 3D points.")
             continue
             # import pdb; pdb.set_trace()
 
