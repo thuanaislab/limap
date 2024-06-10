@@ -177,8 +177,8 @@ def clean_up(dataset_dir, scene, output_dir):
     output_dir = Path(output_dir) / scene
     dataset_dir = dataset_dir / scene
     sfm_database = dataset_dir / 'sfm_superpoint+superglue/database.db'
-    sfm_feats = output_dir / 'feats-superpoint-n4096-r640.h5'
-    matches = output_dir / 'feats-superpoint-n4096-r640_matches-superglue_pairs-db-covis30.h5'
+    sfm_feats = output_dir / 'feats-superpoint-n4096-r1024.h5'
+    matches = output_dir / 'feats-superpoint-n4096-r1024_matches-superglue_pairs-db-covis30.h5'
     # remove unnecessary files
     try:
         os.remove(sfm_database)
