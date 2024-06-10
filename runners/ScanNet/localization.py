@@ -171,6 +171,22 @@ def main(dataset_dir, scene, output_dir, use_dense_depth):
 
     evaluate(gt_dir, results_joint, test_list, only_localized=True)
     '''
+def clean_up(dataset_dir, scene, output_dir):
+    # remove unnecessary files which cause memory redundancy
+    # database.db, feats-superpoint-n4096-r1024
+    output_dir = Path(output_dir) / scene
+    dataset_dir = dataset_dir / scene
+    sfm_database = dataset_dir / 'sfm_superpoint+superglue/database.db'
+    sfm_feats = output_dir / 'feats-superpoint-n4096-r1024.h5'
+    matches = output_dir / 'feats-superpoint-n4096-r1024_matches-superglue_pairs-db-covis30.h5'
+    # remove unnecessary files
+    try:
+        os.remove(sfm_database)
+        os.remove(sfm_feats)
+        os.remove(matches)
+    except:
+        print("[ERROR] while removing unnecessary files.")
+    pass
 if __name__ == '__main__':
     dataset_dir = Path('/media/hoang/Data/ScanNet/ScanNet_data')
     output_dir = '/media/hoang/Data/ScanNet/ScanNet_LimapOutput'
@@ -188,4 +204,5 @@ if __name__ == '__main__':
         # except:
         #     no_converged_scene.append(scene)
         #     continue
+        clean_up(dataset_dir, scene, output_dir)
     print("Done! Scenes that are not converged: ", no_converged_scene)
