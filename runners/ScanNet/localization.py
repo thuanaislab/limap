@@ -184,6 +184,7 @@ def clean_up(dataset_dir, scene, output_dir):
         os.remove(sfm_database)
         os.remove(sfm_feats)
         os.remove(matches)
+        print(f"[INFO] Removed unnecessary files for scene {scene}.")
     except:
         print("[ERROR] while removing unnecessary files.")
     pass

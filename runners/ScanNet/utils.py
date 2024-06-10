@@ -308,7 +308,7 @@ def run_hloc_ScanNet(cfg, dataset, scene, results_file, test_list, num_covis=30,
     feature_conf = {
         'output': 'feats-superpoint-n4096-r1024',
         'model': {'name': 'superpoint', 'nms_radius': 3, 'max_keypoints': 2048, "keypoint_threshold": 0.0},
-        'preprocessing': {'globs': ['*.jpg'], 'grayscale': True, 'resize_max': 640}
+        'preprocessing': {'globs': ['*.jpg'], 'grayscale': True, 'resize_max': 1024}
     }
     if cfg['localization']['2d_matcher'] == 'gluestick':
         raise ValueError("GlueStick not yet supported in HLoc.")
