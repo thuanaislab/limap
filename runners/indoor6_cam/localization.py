@@ -31,7 +31,7 @@ logger.propagate = False
 
 def parse_config():
     arg_parser = argparse.ArgumentParser(description='run localization with point and lines')
-    arg_parser.add_argument('-c', '--config_file', type=str, default='cfgs/localization/indoor6.yaml', help='config file')
+    arg_parser.add_argument('-c', '--config_file', type=str, default='cfgs/localization/indoor6_cam.yaml', help='config file')
     arg_parser.add_argument('--default_config_file', type=str, default='cfgs/localization/default.yaml', help='default config file')
     arg_parser.add_argument('-a', '--vsfm_path', type=str, required=True, help='visualsfm path')
     arg_parser.add_argument('--nvm_file', type=str, default='reconstruction.nvm', help='nvm filename')
@@ -77,7 +77,7 @@ def main():
 
     logger.info(f'Working on scene "{scene_id}".')
     # imagecols, neighbors, ranges = read_scene_visualsfm(cfg, cfg['vsfm_path'], nvm_file=cfg['nvm_file'], n_neighbors=args.num_covis)
-    imagecols, neighbors, ranges = read_scene_indoor6(cfg, str(args.dataset), n_neighbors=args.num_covis)
+    imagecols, neighbors, ranges = read_scene_indoor6(cfg, cfg['vsfm_path'], n_neighbors=args.num_covis)
     train_ids, query_ids, id_to_origin_name = get_scene_info(cfg['vsfm_path'], imagecols)
 
     # GT for queries
