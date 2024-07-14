@@ -211,7 +211,7 @@ def run_hloc_indoor6(cfg, image_dir, imagecols, neighbors, train_ids, query_ids,
         },
         'preprocessing': {
             'grayscale': True,
-            'resize_max': 1024,
+            'resize_max': 640,
         },
     }
     retrieval_conf = extract_features.confs['netvlad']
