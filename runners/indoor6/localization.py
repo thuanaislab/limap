@@ -31,12 +31,12 @@ logger.setLevel(logging.INFO)
 logger.addHandler(handler)
 logger.propagate = False
 
-def parse_config():
+def parse_config(scene, dataset_dir):
     arg_parser = argparse.ArgumentParser(description='run localization with point and lines')
     arg_parser.add_argument('-c', '--config_file', type=str, default='cfgs/localization/indoor6.yaml', help='config file')
     arg_parser.add_argument('--default_config_file', type=str, default='cfgs/localization/default.yaml', help='default config file')
-    arg_parser.add_argument('--dataset', type=Path, required=True, help='indoor6 root path')
-    arg_parser.add_argument('-s', '--scene', type=str, required=True, help='scene name(s)')
+    arg_parser.add_argument('--dataset', type=Path, required=False, help='indoor6 root path')
+    arg_parser.add_argument('-s', '--scene', type=str, required=False, help='scene name(s)')
     arg_parser.add_argument('--info_path', type=str, default=None, help='load precomputed info')
     arg_parser.add_argument('--outputs', type=Path, default='outputs/localization/indoor6',
                         help='Path to the output directory, default: %(default)s')
@@ -51,6 +51,10 @@ def parse_config():
     arg_parser.add_argument('--use_dense_depth', action='store_true')
 
     args, unknown = arg_parser.parse_known_args()
+    
+    args.dataset = dataset_dir
+    args.scene = scene
+    
     cfg = cfgutils.load_config(args.config_file, default_path=args.default_config_file)
     shortcuts = dict()
     shortcuts['-nv'] = '--n_visible_views'
@@ -64,8 +68,9 @@ def parse_config():
         cfg['refinement']['disable'] = True
     return cfg, args
 
-def main():
-    cfg, args = parse_config()
+def main(in_scene, dataset_dir):
+    cfg, args = parse_config(in_scene, dataset_dir)
+    
 
     # Output path for LIMAP results (tmp)
     if cfg['output_dir'] is None:
@@ -168,5 +173,8 @@ def main():
     evaluate(gt_dir, results_joint, test_list, only_localized=True)
 
 if __name__ == '__main__':
-    main()
+    SCENES = ['scene1', 'scene2a', 'scene3', 'scene4a', 'scene5', 'scene6']
+    dataset_dir = Path('/media/hoang/Data/2024/data/indoor6/indoor6_images')
+    for scene in SCENES:  
+        main(scene, dataset_dir)
 

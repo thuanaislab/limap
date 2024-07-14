@@ -245,7 +245,7 @@ def get_train_test_ids_from_sfm(full_model, blacklist=None, blacklist_testval=No
 
 def run_hloc_indoor6(cfg, dataset, scene, results_file, test_list, test_val_list, num_covis=30, use_dense_depth=False, logger=None):
     results_dir = results_file.parent
-    gt_dir = dataset / f'indoor6_sfm_triangulated/{scene}'
+    gt_dir = dataset / f'{scene}'
 
     ref_sfm_sift = results_dir / 'sfm_sift'
     ref_sfm = results_dir / 'sfm_superpoint+superglue'
