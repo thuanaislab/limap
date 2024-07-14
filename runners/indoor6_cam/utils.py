@@ -72,13 +72,19 @@ def get_scene_info(vsfm_path, imagecols):
     train_ids = []
     query_ids = []
     id_to_origin_name = {}
+    signal = True
     for id in imagecols.get_img_ids():
-        image_name = '/'.join(imagecols.image_name(id).split('/')[-2:])
+        # image_name = '/'.join(imagecols.image_name(id).split('/')[-2:])
+        image_name = imagecols.image_name(id)
         if image_name in test_list:
             query_ids.append(id)
+            signal = False
         if image_name not in test_val_list:
             train_ids.append(id)
         id_to_origin_name[id] = image_name
+    print(f'Train: {len(train_ids)}, Query: {len(query_ids)}')
+    if signal:
+        raise ValueError('There are no query images in the dataset?????')
     return train_ids, query_ids, id_to_origin_name
 
 def undistort_and_resize(cfg, imagecols, logger=None):
