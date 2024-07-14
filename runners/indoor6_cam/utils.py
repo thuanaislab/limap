@@ -51,7 +51,6 @@ def read_scene_indoor6(cfg, root_path, n_neighbors=20):
 def get_scene_info(vsfm_path, imagecols):
     
     test_list = os.path.join(vsfm_path, 'list_test.txt')
-    print(test_list)
     with open(test_list, 'r') as f:
         test_list = f.read().rstrip().split('\n')
     test_val_list = os.path.join(vsfm_path, 'list_test_val.txt')
@@ -74,10 +73,9 @@ def get_scene_info(vsfm_path, imagecols):
     query_ids = []
     id_to_origin_name = {}
     signal = True
-    import pdb; pdb.set_trace()
     for id in imagecols.get_img_ids():
         # image_name = '/'.join(imagecols.image_name(id).split('/')[-2:])
-        image_name = imagecols.image_name(id)
+        image_name = imagecols.image_name(id).split('/')[-1:][0]
         if image_name in test_list:
             query_ids.append(id)
             signal = False
