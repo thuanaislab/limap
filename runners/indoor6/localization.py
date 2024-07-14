@@ -81,11 +81,12 @@ def main():
     outputs.mkdir(exist_ok=True, parents=True)
 
     logger.info(f'Working on scene "{args.scene}".')
-    gt_dir = f'indoor6_sfm_triangulated/{args.scene}'
+    gt_dir = f'{args.scene}'
     imagecols, neighbors, ranges = read_scene_indoor6(cfg, str(args.dataset), gt_dir, gt_dir, n_neighbors=args.num_covis)
 
     gt_dir = args.dataset / gt_dir
     test_list = args.query_images or gt_dir / 'list_test.txt'
+    test_val_list = gt_dir / 'list_test_val.txt'
     if args.eval is not None:
         evaluate(gt_dir, args.eval, test_list)
         return
@@ -99,7 +100,7 @@ def main():
     # [A] hloc point-based localization
     ##########################################################
     poses, hloc_log_file, ids = run_hloc_indoor6(
-        cfg, args.dataset, args.scene, results_point, test_list, args.num_covis, args.use_dense_depth, logger
+        cfg, args.dataset, args.scene, results_point, test_list, test_val_list, args.num_covis, args.use_dense_depth, logger
     )
     train_ids, query_ids = ids['train'], ids['query']
     

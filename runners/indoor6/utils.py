@@ -22,7 +22,7 @@ from hloc.utils.parsers import *
 
 logger = logging.getLogger('hloc')
 
-def create_reference_sfm(full_model, ref_model, blacklist=None, ext='.bin'):
+def create_reference_sfm(full_model, ref_model, blacklist=None, blacklist_testval=None, ext='.bin'):
     '''Create a new COLMAP model with only training images.'''
     logger.info('Creating the reference model.')
     ref_model.mkdir(exist_ok=True)
@@ -31,13 +31,17 @@ def create_reference_sfm(full_model, ref_model, blacklist=None, ext='.bin'):
     if blacklist is not None:
         with open(blacklist, 'r') as f:
             blacklist = f.read().rstrip().split('\n')
+    if blacklist_testval is not None:
+        with open(blacklist_testval, 'r') as f:
+            blacklist_testval = f.read().rstrip().split('\n')
 
     train_ids = []
     test_ids = []
     images_ref = dict()
     for id_, image in images.items():
-        if blacklist and image.name in blacklist:
-            test_ids.append(id_)
+        if image.name in blacklist_testval:
+            if image.name in blacklist:
+                test_ids.append(id_)
             continue
         train_ids.append(id_)
         images_ref[id_] = image
@@ -216,23 +220,30 @@ def get_result_filenames(cfg, use_dense_depth=False):
         results_joint = results_joint.replace('gluestick', 'gluestickp+l')
     return results_point, results_joint
 
-def get_train_test_ids_from_sfm(full_model, blacklist=None, ext='.bin'):
+def get_train_test_ids_from_sfm(full_model, blacklist=None, blacklist_testval=None, ext='.bin'):
     cameras, images, points3D = read_model(full_model, ext)
 
     if blacklist is not None:
         with open(blacklist, 'r') as f:
             blacklist = f.read().rstrip().split('\n')
+    
+    if blacklist_testval is not None:
+        with open(blacklist_testval, 'r') as f:
+            blacklist_testval = f.read().rstrip().split('\n')
 
     train_ids, test_ids = [], []
     for id_, image in images.items():
         if blacklist and image.name in blacklist:
             test_ids.append(id_)
         else:
-            train_ids.append(id_)
+            if blacklist_testval and image.name in blacklist_testval:
+                pass
+            else:
+                train_ids.append(id_)
     
     return train_ids, test_ids
 
-def run_hloc_indoor6(cfg, dataset, scene, results_file, test_list, num_covis=30, use_dense_depth=False, logger=None):
+def run_hloc_indoor6(cfg, dataset, scene, results_file, test_list, test_val_list, num_covis=30, use_dense_depth=False, logger=None):
     results_dir = results_file.parent
     gt_dir = dataset / f'indoor6_sfm_triangulated/{scene}'
 
@@ -256,10 +267,10 @@ def run_hloc_indoor6(cfg, dataset, scene, results_file, test_list, num_covis=30,
 
     # feature extraction
     features = extract_features.main(
-            feature_conf, dataset / f'indoor6_sfm_triangulated/{scene}', results_dir, as_half=True)
+            feature_conf, dataset / f'{scene}', results_dir, as_half=True)
 
-    train_ids, query_ids = get_train_test_ids_from_sfm(gt_dir, test_list)
-    create_reference_sfm(gt_dir, ref_sfm_sift, test_list)
+    train_ids, query_ids = get_train_test_ids_from_sfm(gt_dir, test_list, test_val_list)
+    create_reference_sfm(gt_dir, ref_sfm_sift, test_list, test_val_list)
     create_query_list_with_intrinsics(gt_dir, query_list, test_list)
     if not sfm_pairs.exists():
         pairs_from_covisibility.main(
@@ -270,7 +281,7 @@ def run_hloc_indoor6(cfg, dataset, scene, results_file, test_list, num_covis=30,
             matcher_conf, retrieval_path, feature_conf['output'], results_dir)
     if not ref_sfm.exists():
         triangulation.main(
-                ref_sfm, ref_sfm_sift, dataset / f'indoor6_sfm_triangulated/{scene}', sfm_pairs, features, sfm_matches)
+                ref_sfm, ref_sfm_sift, dataset / f'{scene}', sfm_pairs, features, sfm_matches)
 
     if use_dense_depth:
         assert depth_dir is not None
