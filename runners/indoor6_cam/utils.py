@@ -38,7 +38,7 @@ def read_scene_indoor6(cfg, root_path, n_neighbors=20):
     if cfg['skip_exists'] and os.path.exists(os.path.join(output_dir, metainfos_filename)):
         cfg['info_path'] = os.path.join(output_dir, metainfos_filename)
     if cfg['info_path'] is None:
-        imagecols, neighbors, ranges = _psfm.read_infos_colmap(cfg['sfm'], root_path, n_neighbors=n_neighbors)
+        imagecols, neighbors, ranges = _psfm.read_infos_colmap(cfg['sfm'], root_path, model_path='', image_path='', n_neighbors=n_neighbors)
         with open(os.path.join(output_dir, metainfos_filename), 'wb') as f:
             np.savez(f, imagecols_np=imagecols.as_dict(), neighbors=neighbors, ranges=ranges)
     else:
