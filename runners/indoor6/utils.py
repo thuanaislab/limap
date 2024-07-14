@@ -256,7 +256,7 @@ def run_hloc_indoor6(cfg, dataset, scene, results_file, test_list, test_val_list
     feature_conf = {
         'output': 'feats-superpoint-n4096-r1024',
         'model': {'name': 'superpoint', 'nms_radius': 3, 'max_keypoints': 4096},
-        'preprocessing': {'globs': ['*.png'], 'grayscale': True, 'resize_max': 1024}
+        'preprocessing': {'globs': ['*.png'], 'grayscale': True, 'resize_max': 640}
     }
     if cfg['localization']['2d_matcher'] == 'gluestick':
         raise ValueError("GlueStick not yet supported in HLoc.")
