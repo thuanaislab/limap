@@ -34,5 +34,5 @@ line2d:
 
 sfm:
     hloc:
-        descriptor: "superpoint_inloc"
+        descriptor: "superpoint_aachen"
         matcher: "superglue"
