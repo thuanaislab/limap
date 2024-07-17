@@ -13,6 +13,7 @@ import logging
 import pycolmap
 import pickle
 from pathlib import Path
+import json
 
 from hloc.utils.parsers import parse_retrieval
 from utils import read_scene_visualsfm, get_scene_info, get_result_filenames, eval, undistort_and_resize, run_hloc_indoor6, read_scene_indoor6
@@ -94,9 +95,9 @@ def main():
     results_point, results_joint = outputs / results_point, outputs / results_joint
 
     img_name_to_id = {"image{0:08d}.png".format(id): id for id in (train_ids + query_ids)}
-    # save id_to_origin_name
-    with open(outputs / 'id_to_origin_name.txt', 'wb') as f:
-        pickle.dump(id_to_origin_name, f)
+    # save id_to_origin_name dicts using json
+    with open(outputs / 'id_to_origin_name.txt', 'w') as f:
+        json.dump(id_to_origin_name, f)
 
     ##########################################################
     # [A] hloc point-based localization
