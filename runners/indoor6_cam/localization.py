@@ -94,6 +94,9 @@ def main():
     results_point, results_joint = outputs / results_point, outputs / results_joint
 
     img_name_to_id = {"image{0:08d}.png".format(id): id for id in (train_ids + query_ids)}
+    # save id_to_origin_name
+    with open(outputs / 'id_to_origin_name.txt', 'wb') as f:
+        pickle.dump(id_to_origin_name, f)
 
     ##########################################################
     # [A] hloc point-based localization
