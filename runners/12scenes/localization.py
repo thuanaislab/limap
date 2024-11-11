@@ -14,7 +14,7 @@ import pycolmap
 import limap.pointsfm.read_write_model as colmap_utils
 from pathlib import Path
 
-from utils import DepthReader, read_scene_7scenes, get_result_filenames, run_hloc_7scenes
+from utils import DepthReader, read_scene_12scenes, get_result_filenames, run_hloc_12scenes
 from utils import image_path_to_rendered_depth_path, evaluate
 from hloc.utils.parsers import parse_retrieval
 
@@ -32,9 +32,9 @@ logger.propagate = False
 
 def parse_config():
     arg_parser = argparse.ArgumentParser(description='run localization with point and lines')
-    arg_parser.add_argument('-c', '--config_file', type=str, default='cfgs/localization/7scenes.yaml', help='config file')
+    arg_parser.add_argument('-c', '--config_file', type=str, default='cfgs/localization/12scenes.yaml', help='config file')
     arg_parser.add_argument('--default_config_file', type=str, default='cfgs/localization/default.yaml', help='default config file')
-    arg_parser.add_argument('--dataset', type=Path, required=True, help='7scenes root path')
+    arg_parser.add_argument('--dataset', type=Path, required=True, help='12scenes root path')
     arg_parser.add_argument('-s', '--scene', type=str, required=True, help='scene name(s)')
     arg_parser.add_argument('--info_path', type=str, default=None, help='load precomputed info')
 
@@ -62,7 +62,7 @@ def parse_config():
 
     # Output path for LIMAP results (tmp)
     if cfg['output_dir'] is None:
-        cfg['output_dir'] = 'tmp/7scenes/{}'.format(args.scene)
+        cfg['output_dir'] = 'tmp/12scenes/{}'.format(args.scene)
     # Output folder for LIMAP linetracks (in tmp)
     if cfg['output_folder'] is None:
         cfg['output_folder'] = 'finaltracks'
@@ -78,8 +78,8 @@ def main():
     outputs.mkdir(exist_ok=True, parents=True)
 
     logger.info(f'Working on scene "{args.scene}".')
-    gt_dir = f'7scenes_sfm_triangulated/{args.scene}/triangulated'
-    imagecols, neighbors, ranges = read_scene_7scenes(cfg, str(args.dataset), gt_dir, args.scene, n_neighbors=args.num_covis)
+    gt_dir = args.scene
+    imagecols, neighbors, ranges = read_scene_12scenes(cfg, str(args.dataset), gt_dir, args.scene, n_neighbors=args.num_covis)
 
     gt_dir = args.dataset / gt_dir
     test_list = args.query_images or gt_dir / 'list_test.txt'
@@ -95,15 +95,15 @@ def main():
     ##########################################################
     # [A] hloc point-based localization
     ##########################################################
-    poses, hloc_log_file, ids = run_hloc_7scenes(
+    poses, hloc_log_file, ids = run_hloc_12scenes(
         cfg, args.dataset, args.scene, results_point, test_list, args.num_covis, args.use_dense_depth, logger
     )
     train_ids, query_ids = ids['train'], ids['query']
 
     # Some paths useful for LIMAP localization too
     ref_sfm_path = outputs / ('sfm_superpoint+superglue' + ('+depth' if args.use_dense_depth else ''))
-    depth_dir = args.dataset / f'depth/7scenes_{args.scene}/train/depth'
-    retrieval_path = args.dataset / '7scenes_densevlad_retrieval_top_10' / f'{args.scene}_top10.txt'
+    depth_dir = args.dataset / f'depth/12scenes_{args.scene}/train/depth'
+    retrieval_path = outputs /  f'{args.scene}_top10.txt'
 
     ##########################################################
     # [B] LIMAP triangulation/fitnmerge for database line tracks

@@ -11,13 +11,14 @@ import limap.base as _base
 import limap.pointsfm as _psfm
 import limap.util.io as limapio
 
-from hloc import extract_features, localize_sfm, match_features, pairs_from_covisibility, triangulation
+from hloc import extract_features, localize_sfm, match_features,\
+    pairs_from_covisibility, triangulation, pairs_from_retrieval
 from hloc.utils.read_write_model import read_model, write_model
 from hloc.pipelines.Cambridge.utils import create_query_list_with_intrinsics, evaluate
 from hloc.utils.parsers import *
 
 ###############################################################################
-# The following utils functions are taken/modified from hloc.pipelines.7scenes
+# The following utils functions are taken/modified from hloc.pipelines.12scenes
 ###############################################################################
 
 logger = logging.getLogger('hloc')
@@ -174,8 +175,8 @@ class DepthReader(_base.BaseDepthReader):
         depth[(depth == 0.0) | (depth > 1000.0)] = np.inf
         return depth
 
-def read_scene_7scenes(cfg, root_path, model_path, image_path, n_neighbors=20):
-    metainfos_filename = 'infos_7scenes.npy'
+def read_scene_12scenes(cfg, root_path, model_path, image_path, n_neighbors=20):
+    metainfos_filename = 'infos_12scenes.npy'
     output_dir = 'tmp' if cfg['output_dir'] is None else cfg['output_dir']
     limapio.check_makedirs(output_dir)
     if cfg['skip_exists'] and os.path.exists(os.path.join(output_dir, metainfos_filename)):
@@ -231,20 +232,20 @@ def get_train_test_ids_from_sfm(full_model, blacklist=None, ext='.bin'):
     
     return train_ids, test_ids
 
-def run_hloc_7scenes(cfg, dataset, scene, results_file, test_list, num_covis=30, use_dense_depth=False, logger=None):
+def run_hloc_12scenes(cfg, dataset, scene, results_file, test_list, num_covis=30, use_dense_depth=False, logger=None):
     results_dir = results_file.parent
-    gt_dir = dataset / f'7scenes_sfm_triangulated/{scene}/triangulated'
+    gt_dir = dataset / scene
 
     ref_sfm_sift = results_dir / 'sfm_sift'
     ref_sfm = results_dir / 'sfm_superpoint+superglue'
     query_list = results_dir / 'query_list_with_intrinsics.txt'
     sfm_pairs = results_dir / f'pairs-db-covis{num_covis}.txt'
-    depth_dir = dataset / f'depth/7scenes_{scene}/train/depth'
-    retrieval_path = dataset / '7scenes_densevlad_retrieval_top_10' / f'{scene}_top10.txt'
+    depth_dir = dataset / f'depth/12scenes_{scene}/train/depth'
+    retrieval_path = results_dir / f'{scene}_top10.txt'
     feature_conf = {
         'output': 'feats-superpoint-n4096-r1024',
         'model': {'name': 'superpoint', 'nms_radius': 3, 'max_keypoints': 4096},
-        'preprocessing': {'globs': ['*.color.png'], 'grayscale': True, 'resize_max': 1024}
+        'preprocessing': {'globs': ['*.color.jpg'], 'grayscale': True, 'resize_max': 1024}
     }
     if cfg['localization']['2d_matcher'] == 'gluestick':
         raise ValueError("GlueStick not yet supported in HLoc.")
@@ -255,9 +256,11 @@ def run_hloc_7scenes(cfg, dataset, scene, results_file, test_list, num_covis=30,
 
     # feature extraction
     features = extract_features.main(
-            feature_conf, dataset / scene, results_dir, as_half=True)
+            feature_conf, dataset / f'{scene}', results_dir, as_half=True)
 
     train_ids, query_ids = get_train_test_ids_from_sfm(gt_dir, test_list)
+    
+    
     create_reference_sfm(gt_dir, ref_sfm_sift, test_list)
     create_query_list_with_intrinsics(gt_dir, query_list, test_list)
     if not sfm_pairs.exists():
@@ -265,6 +268,17 @@ def run_hloc_7scenes(cfg, dataset, scene, results_file, test_list, num_covis=30,
                 ref_sfm_sift, sfm_pairs, num_matched=num_covis)
     sfm_matches = match_features.main(
             matcher_conf, sfm_pairs, feature_conf['output'], results_dir)
+    
+    with open(test_list, 'r') as f:
+        query_seqs = f.read().rstrip().split('\n')
+    
+    if not retrieval_path.exists():
+        retrieval_conf = extract_features.confs['netvlad']
+        global_descriptors = extract_features.main(retrieval_conf, dataset / f'{scene}', results_dir)
+        pairs_from_retrieval.main(
+            global_descriptors, retrieval_path, 10,
+            db_model=ref_sfm_sift, query_prefix=query_seqs)
+    
     loc_matches = match_features.main(
             matcher_conf, retrieval_path, feature_conf['output'], results_dir)
     if not ref_sfm.exists():
