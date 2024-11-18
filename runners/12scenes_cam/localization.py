@@ -30,11 +30,11 @@ logger.setLevel(logging.INFO)
 logger.addHandler(handler)
 logger.propagate = False
 
-def parse_config():
+def parse_config(scene, vsfm_path):
     arg_parser = argparse.ArgumentParser(description='run localization with point and lines')
     arg_parser.add_argument('-c', '--config_file', type=str, default='cfgs/localization/12scenes_cam.yaml', help='config file')
     arg_parser.add_argument('--default_config_file', type=str, default='cfgs/localization/default.yaml', help='default config file')
-    arg_parser.add_argument('-a', '--vsfm_path', type=str, required=True, help='visualsfm path')
+    arg_parser.add_argument('-a', '--vsfm_path', type=str, help='visualsfm path')
     arg_parser.add_argument('--nvm_file', type=str, default='reconstruction.nvm', help='nvm filename')
     arg_parser.add_argument('--info_path', type=str, default=None, help='load precomputed info')
 
@@ -48,6 +48,7 @@ def parse_config():
                         help='Number of image pairs for loc, default: %(default)s')
 
     args, unknown = arg_parser.parse_known_args()
+    args.vsfm_path = f'{vsfm_path}/{scene}'
     cfg = cfgutils.load_config(args.config_file, default_path=args.default_config_file)
     shortcuts = dict()
     shortcuts['-nv'] = '--n_visible_views'
@@ -67,8 +68,8 @@ def parse_config():
         cfg['output_folder'] = 'finaltracks'
     return cfg, args
 
-def main():
-    cfg, args = parse_config()
+def main(scene, vsfm_path):
+    cfg, args = parse_config(scene, vsfm_path)
     cfg = _runners.setup(cfg)
     scene_id = os.path.basename(cfg['vsfm_path'])
 
@@ -155,4 +156,11 @@ def main():
     eval(results_joint, poses_gt, query_ids, id_to_origin_name, logger)
 
 if __name__ == '__main__':
-    main()
+    # apt1_kitchen  apt1_living  apt2_bed  apt2_kitchen  apt2_living  apt2_luke  depth  office1_gates362  office1_gates381  office1_lounge  office1_manolis  office2_5a  office2_5b
+    SCENCES = ['apt1_kitchen', 'apt1_living', 'apt2_bed', 
+               'apt2_kitchen', 'apt2_living', 'apt2_luke',
+               'office1_gates362', 'office1_gates381', 'office1_lounge',
+               'office1_manolis', 'office2_5a', 'office2_5b']
+    for scene in SCENCES:
+        main(scene, vsfm_path='../datasets/12scenes')
+    
